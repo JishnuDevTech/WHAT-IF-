@@ -16,7 +16,7 @@ export function makeAgent(id, built, entry = false, citizen = null) {
     r[3] = ((citizen.workplace % 4) + 0.5) / 4
   }
   const role = citizen?.role || (q < 0.16 ? 'farmer' : q < 0.52 ? 'worker' : q < 0.64 ? 'shop' : q < 0.72 ? 'engineer' : q < 0.86 ? 'student' : 'elder')
-  const a = { id, citizenId: citizen?.id ?? id, home: citizen?.home ?? 0, workplace: citizen?.workplace ?? 0, currentLocation: citizen?.currentLocation ?? 'home', activity: citizen?.activity ?? 'resting', r, role, age: citizen?.age ?? 30, health: citizen?.health ?? 70, happiness: citizen?.happiness ?? 65, education: citizen?.education ?? 40, fitness: citizen?.fitness ?? 50, wealth: citizen?.wealth ?? 1000,
+  const a = { id, citizenId: citizen?.id ?? id, name: citizen?.name ?? `Resident ${id}`, home: citizen?.home ?? 0, workplace: citizen?.workplace ?? 0, currentLocation: citizen?.currentLocation ?? 'home', activity: citizen?.activity ?? 'resting', r, role, age: citizen?.age ?? 30, ageGroup: citizen?.ageGroup ?? 'adult', health: citizen?.health ?? 70, happiness: citizen?.happiness ?? 65, education: citizen?.education ?? 40, fitness: citizen?.fitness ?? 50, wealth: citizen?.wealth ?? 1000, energy: citizen?.energy ?? 70, foodNeed: citizen?.foodNeed ?? 30, socialNeed: citizen?.socialNeed ?? 30, job: citizen?.job ?? null,
     employed: citizen?.employed ?? false, canWork: citizen ? citizen.age >= 19 && citizen.age < 67 : role !== 'student' && role !== 'elder', emp: citizen?.employed ?? false,
     loc: entry ? 'entry' : 'home', state: 'resting', bubble: null, dir: 1, dur: 0, lane: ROAD_Y - 8 + r[5] * 16, built,
     look: citizen?.look || { skin: SKIN[Math.floor(r[6] * 5)], hair: HAIR[Math.floor(r[7] * 5)], shirt: SHIRT[Math.floor(r[8] * 6)] } }
@@ -37,11 +37,13 @@ function want(a, c) {
     return a.r[8] < 0.35 ? at('park', 'relaxing') : a.r[8] < 0.6 && t < 20 ? at('shop', 'shopping') : at('home', 'resting')
   }
   if (t < 7.5) return at('home', 'waking up')
-  if (a.role === 'student' && t >= 7.5 && t < 15.5) return at('school', 'studying', 'book')
+  if (a.role === 'student' && !w.policies?.schoolsClosed && t >= 7.5 && t < 15.5) return at('school', 'studying', 'book')
+  if (a.energy < 16) return at('home', 'sleeping', 'z')
   if ((a.fitness > 74 || w.policies?.fitnessTarget >= 80 || w.policies?.gyms > 40) && ((t >= 6.5 && t < 8.5) || (t >= 16 && t < 20))) {
     return w.policies?.gyms > 40 ? at('gym', 'exercising', 'strong') : at('park', 'exercising', 'strong')
   }
   if (R.water < 45 && a.r[9] < ((45 - R.water) / 45) * 0.8 && t >= 10 && t < 16) return at('lake', 'fetching water', 'water')
+  if (a.foodNeed > 72 && t >= 10 && t < 18) return at('shop', 'looking for food', 'hungry')
   if (w.policies?.workFromHome && emp) return at('home', 'working from home')
   if (emp) {
     if (ev.has('energy_failure') && a.r[8] < 0.4) return at('plant', 'protesting the blackout', 'alert')
@@ -50,7 +52,7 @@ function want(a, c) {
   }
   if (R.food < 45 && a.r[8] < ((45 - R.food) / 45) * 0.8 && t >= 11 && t < 15) return at('shop', 'looking for food', 'hungry')
   if (ev.has('job_crisis') && a.canWork && a.r[8] < 0.6) return at('square', 'protesting', 'alert')
-  if (a.role === 'child') return at('park', 'playing')
+  if (a.role === 'student') return at('park', 'playing')
   const bubble = a.canWork && R.employment < 55 ? 'jobless' : null
   return [at('park', 'strolling', bubble), at('shop', 'shopping', bubble), at('square', 'chatting', bubble)][Math.floor(t / 2.5 + a.r[3] * 3) % 3]
 }

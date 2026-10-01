@@ -13,11 +13,11 @@ export default function ControlPanel({ world, running, paused, fast, onResource,
           {RESOURCES.map((r) => <Meter key={r.id} label={r.label} icon={ICON[r.icon]} value={world.resources[r.id]} disabled={running} onChange={(v) => onResource(r.id, v)} />)}
         </div>
         <div className="flex w-full items-center justify-end gap-1.5 sm:w-auto sm:gap-2">
-          <button title={paused ? 'Resume time' : 'Pause time'} aria-label={paused ? 'Resume time' : 'Pause time'} onClick={onPause} className={button}>{paused ? <Play size={15} /> : <Pause size={15} />}</button>
-          <button title="Advance one day" onClick={() => onAdvance(1)} disabled={running} className={button}><StepForward size={15} />1 DAY</button>
-          <button title="Advance seven days" onClick={onRun} disabled={running} className={button}>{running ? <Loader2 size={15} className="animate-spin" /> : <FastForward size={15} />}7 DAYS</button>
-          <button title="Fast-forward time" aria-pressed={fast} onClick={onFast} className={`${button} ${fast ? 'border-recovery/70 text-recovery' : ''}`}><FastForward size={15} />FAST</button>
-          <button title="Introduce a combination of unexpected changes" onClick={onChaos} disabled={running} className="inline-flex min-h-9 items-center justify-center gap-1 rounded-md border border-warning/60 bg-warning/10 px-3 text-xs font-bold text-warning transition hover:bg-warning/20 disabled:opacity-40"><Zap size={15} fill="currentColor" />CHAOS</button>
+          <button title={paused ? 'Resume time' : 'Pause time'} aria-label={paused ? 'Resume time' : 'Pause time'} onClick={onPause} disabled={world.ended} className={button}>{paused ? <Play size={15} /> : <Pause size={15} />}</button>
+          <button title="Advance one day" onClick={() => onAdvance(1)} disabled={running || world.ended} className={button}><StepForward size={15} />1 DAY</button>
+          <button title="Advance seven days" onClick={onRun} disabled={running || world.ended} className={button}>{running ? <Loader2 size={15} className="animate-spin" /> : <FastForward size={15} />}7 DAYS</button>
+          <button title="Fast-forward time" aria-pressed={fast} onClick={onFast} disabled={world.ended} className={`${button} ${fast ? 'border-recovery/70 text-recovery' : ''}`}><FastForward size={15} />FAST</button>
+          <button title={world.chaosMode ? 'Turn Chaos mode off' : 'Activate Chaos mode'} aria-pressed={world.chaosMode} onClick={onChaos} disabled={running || world.ended} className={`inline-flex min-h-9 items-center justify-center gap-1 rounded-md border px-3 text-xs font-bold transition disabled:opacity-40 ${world.chaosMode ? 'border-critical bg-critical/20 text-critical' : 'border-warning/60 bg-warning/10 text-warning hover:bg-warning/20'}`}><Zap size={15} fill="currentColor" />{world.chaosMode ? 'CHAOS ON' : 'CHAOS'}</button>
           <button title="Reset simulation" aria-label="Reset simulation" onClick={onReset} disabled={running} className={button}><RotateCcw size={15} /></button>
         </div>
       </div>

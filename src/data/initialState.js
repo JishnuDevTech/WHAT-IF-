@@ -21,10 +21,13 @@ export const createInitialState = () => {
   return {
     population: citizens.length, citizens, births: 0, deaths: 0, weather: 'clear', weatherUntil: null, growth: 'stable',
     resources: { food: 70, water: 70, energy: 65, housing: 60, employment: 65 },
-    happiness: 72, health: 80, environment: 76, businessActivity: 62, schoolActivity: 30, gymActivity: 24,
+    happiness: 72, health: 80, environment: 76, economy: 70, foodPrices: 40, farmHealth: 76,
+    constructionDemand: 35, businessActivity: 62, schoolActivity: 30, gymActivity: 24,
+    roads: 58, roadsTarget: null, traffic: 24, pollution: 22, emergencyResponse: 78, budget: 7200,
     ...summarizeCitizens(citizens),
-    policies: { educationTarget: null, fitnessTarget: null, happinessTarget: null, healthTarget: null, employmentTarget: null, wealthTarget: null, populationTarget: null, freeEducation: false, fitnessCulture: null, gyms: 20, diet: 'balanced', workFromHome: false, pets: false, cars: true },
-    activeEvents: [], log: [], lastCauses: [],
+    policies: { educationTarget: null, fitnessTarget: null, happinessTarget: null, healthTarget: null, employmentTarget: null, wealthTarget: null, populationTarget: null, freeEducation: false, freeHousing: false, energyUnlimited: false, schoolsClosed: false, fitnessCulture: null, gyms: 20, diet: 'balanced', workFromHome: false, pets: false, cars: true },
+    chaosMode: false, critical: false, collapseDays: 0, ended: false, collapsedPopulation: null, collapseDay: null,
+    activeEvents: [], pendingEvents: [], log: [], lastCauses: [],
     history: [{ day: 1, population: citizens.length, happiness: 72 }],
   }
 }

@@ -2,6 +2,7 @@ import { applyRules } from './rules'
 import { detectEvents } from './events'
 import { GROWTH } from '../data/initialState'
 import { evolveCitizens, resizeCitizens, summarizeCitizens } from '../data/citizens'
+import { maybeCreateCrisis } from './crises'
 
 export const DAY_SCALE = 0.7 // one game day = 70% of a rules step
 
@@ -14,6 +15,7 @@ export function withEvents(next, prev, day) {
 
 // Advance the world by one day.
 export function stepWorld(w, day) {
+  if (w.ended) return w
   const ru = applyRules(w, DAY_SCALE)
   const g = GROWTH.find((x) => x.id === w.growth)
   const pop = w.population
@@ -25,11 +27,34 @@ export function stepWorld(w, day) {
   const migrants = Math.max(naturalMigrants, policyMigrants)
   const population = Math.min(5000, pop - deaths + births + migrants)
   const citizens = evolveCitizens(resizeCitizens(w.citizens, population), w, ru, day)
-  const policies = population >= policyTarget ? { ...w.policies, populationTarget: null } : w.policies
-  const next = { ...w, ...ru, ...summarizeCitizens(citizens), citizens, policies, lastCauses: ru.causes, population,
+  const policies = policyTarget != null && population >= policyTarget ? { ...w.policies, populationTarget: null } : w.policies
+  const vitalStats = [ru.resources.food, ru.resources.water, ru.resources.energy, ru.resources.housing, ru.resources.employment, ru.health, ru.happiness]
+  const criticalCount = vitalStats.filter((value) => value <= 10).length
+  const collapseDays = criticalCount >= 5 ? (w.collapseDays || 0) + 1 : 0
+  const ended = collapseDays >= 2
+  const finalPopulation = ended ? 0 : population
+  const finalCitizens = ended ? [] : citizens
+  let next = { ...w, ...ru, ...summarizeCitizens(finalCitizens), citizens: finalCitizens, policies, lastCauses: ru.causes, population: finalPopulation,
     births: w.births + births + migrants, deaths: w.deaths + deaths,
-    history: [...w.history.slice(-80), { day, population, happiness: Math.round(ru.happiness) }] }
-  return withEvents(next, w, day)
+    critical: criticalCount >= 2, collapseDays, ended,
+    collapsedPopulation: ended ? population : w.collapsedPopulation,
+    collapseDay: ended ? day : w.collapseDay,
+    history: [...w.history.slice(-80), { day, population: finalPopulation, happiness: Math.round(ru.happiness) }] }
+  next = withEvents(next, w, day)
+
+  const strongestCause = [...ru.causes].sort((a, b) => b.severity - a.severity)[0]
+  if (strongestCause?.severity > 0.18) {
+    const [cause, effect, consequence] = strongestCause.chain
+    next.log = [{ id: `cause-${day}-${strongestCause.tag}`, key: `cause-${day}-${strongestCause.tag}`, title: cause, severity: strongestCause.severity > 0.6 ? 'critical' : 'warning', why: `${effect} → ${consequence}`, day }, ...next.log].slice(0, 30)
+  }
+
+  const crisis = ended ? null : maybeCreateCrisis(next, day)
+  if (crisis) {
+    next.pendingEvents = [...(next.pendingEvents || []), crisis]
+    next.log = [{ id: crisis.id, key: crisis.id, title: `${crisis.title} detected`, severity: crisis.severity, why: crisis.description, day }, ...next.log].slice(0, 30)
+  }
+  if (ended) next.log = [{ id: `collapse-${day}`, key: `collapse-${day}`, title: 'Civilization collapsed', severity: 'critical', why: 'Food, water, energy, housing, jobs, health, and happiness could no longer sustain the city.', day }, ...next.log].slice(0, 30)
+  return next
 }
 
 export function buildReport(before, after, causes, chaos) {

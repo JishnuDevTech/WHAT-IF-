@@ -13,9 +13,19 @@ const hurt = (did, expect, patch) => (w) => ({ w: patch(w), did, expect })
 const setPolicy = (key, value, did, expect, patch = {}) => (w) => ({
   w: { ...w, ...patch, policies: { ...w.policies, ...patch.policies, [key]: value } }, did, expect,
 })
+const cityPatch = (patch, did, expect) => (w) => ({ w: { ...w, ...patch }, did, expect })
 const TIME = { night: 23, midnight: 0.5, morning: 8, dawn: 6, sunrise: 6, noon: 12, midday: 12, afternoon: 15, evening: 18, dusk: 19, sunset: 19, daytime: 10, day: 10 }
 
 const parsers = [
+  (s) => /\b(build|improve|expand) (more )?roads?\b/.test(s) && cityPatch({ roadsTarget: 100 }, 'Road network expansion begins', 'Traffic and emergency response will improve as roads are built.'),
+  (s) => /\b(increase|boost|restore) (the )?(electricity|power)\b/.test(s) && setRes('energy', (v) => v + 25, {}),
+  (s) => /\b(improve|fund|boost) (emergency|fire|ambulance) services?\b/.test(s) && cityPatch({ emergencyServices: 18, budget: 6500 }, 'Emergency services receive funding', 'Response times improve, but the city budget takes the hit.'),
+  (s) => /\b(remove|reduce) traffic\b/.test(s) && cityPatch({ roads: clamp(100), traffic: clamp(8) }, 'Traffic reduction plan begins', 'Cleaner roads improve travel and emergency response.'),
+  (s) => /\b(unlimited energy|infinite energy)\b/.test(s) && setPolicy('energyUnlimited', true, 'Unlimited energy policy begins', 'The power station ramps up over the coming days.'),
+  (s) => /\bfree housing|housing for everyone\b/.test(s) && setPolicy('freeHousing', true, 'Free housing program begins', 'New homes are built over time; energy use and construction costs rise.'),
+  (s) => /\b(make everyone rich|everyone rich|give everyone .*money)\b/.test(s) && setPolicy('wealthTarget', 10000, 'A citywide wealth program begins', 'Household wealth rises gradually, boosting shops and business activity.'),
+  (s) => /\b(close|shut|close down) (all |every )?schools?\b/.test(s) && setPolicy('schoolsClosed', true, 'Schools close across the city', 'Attendance stops and education will decline until schools reopen.'),
+  (s) => /\b(reopen|open) (all |every )?schools?\b/.test(s) && setPolicy('schoolsClosed', false, 'Schools reopen', 'Students return and education begins recovering.'),
   (s) => /\b(bodybuilder|bodybuilding|fitness culture)\b/.test(s) && setPolicy('fitnessTarget', 100, 'Bodybuilding culture begins', 'Exercise programs spread through the city; fitness will rise over the coming days.', { policies: { fitnessCulture: 'bodybuilding', gyms: 100 } }),
   (s) => { const m = s.match(/\b(literacy|education)\b.*?\b(\d{1,3})\s*(%|percent)?/); return m && setPolicy('educationTarget', Math.min(100, +m[2]), `Education target set to ${Math.min(100, +m[2])}%`, 'Schools become busier first; the workforce changes as education improves.') },
   (s) => /\b(free education|education for everyone)\b/.test(s) && setPolicy('freeEducation', true, 'Free education introduced', 'More citizens attend school, and education rises over time.', { educationTarget: 100 }),

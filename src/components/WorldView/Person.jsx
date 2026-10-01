@@ -34,7 +34,7 @@ const Person = memo(({ a }) => {
   return (
     <motion.g initial={{ x: a.x, y: a.y }} animate={anim} transition={{ duration: a.dur, times: [0, 0.2, 0.8, 1], ease: 'linear' }}
       onAnimationStart={() => setMoving(true)} onAnimationComplete={() => setMoving(false)}>
-      <title>{`${a.role === 'student' ? 'student' : a.emp ? a.role : a.role === 'child' ? 'child' : a.role === 'elder' ? 'elder' : 'resident'} · ${a.state} · age ${a.age} · fitness ${Math.round(a.fitness)} · home ${a.home + 1} · workplace ${a.workplace + 1}`}</title>
+      <title>{`${a.name} · ${a.ageGroup} ${a.emp ? a.role : 'resident'} · ${a.state} · health ${Math.round(a.health)} · fitness ${Math.round(a.fitness)} · home ${a.home + 1} · workplace ${a.workplace + 1}`}</title>
       <Figure a={a} moving={moving} />
       {b && <g transform="translate(0,-40)"><circle r="5.5" fill={b[0]} /><text y="3.4" textAnchor="middle" fontSize="9" fontWeight="800" fill="#080b11">{b[1]}</text></g>}
     </motion.g>
